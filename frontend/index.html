@@ -1,28 +1,30 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>IP Logger - Frontend</title>
+  <meta charset="UTF-8">
+  <title>IP Logger</title>
 </head>
 <body>
-  <h1>Benvenuto sul sito di test IP Logger (Frontend su GitHub Pages)</h1>
-  <button id="logBtn">Cliccami</button>
+  <h1>IP Logger Demo</h1>
+  <button id="logBtn">Invia evento</button>
 
   <script>
-const backendUrl = 'https://ip-xje4.onrender.com/';
+    fetch("https://ip-xje4.onrender.com/log", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ event: "page-load" })
+    });
 
-    document.getElementById('logBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch(backendUrl + '/log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
-        if (res.ok) alert('Log registrato!');
-        else alert('Errore nel log');
-      } catch (e) {
-        alert('Errore nella richiesta: ' + e.message);
-      }
+    document.getElementById("logBtn").addEventListener("click", () => {
+      fetch("https://ip-xje4.onrender.com/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ event: "button-click" })
+      });
     });
   </script>
 </body>
