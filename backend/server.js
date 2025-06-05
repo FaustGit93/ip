@@ -1,38 +1,49 @@
-import express from 'express';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import express from 'express';
 import fetch from 'node-fetch';
 import cors from 'cors';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public'))); // se usi cartella "public" o "frontend"
+
+const logFilePath = path.join(__dirname, 'log.csv');
+
+// Crea intestazione CSV se il file non esiste
+if (!fs.existsSync(logFilePath)) {
+  fs.writeFileSync(logFilePath, 'timestamp,ip,userAgent,event\n');
+}
 
 app.post('/log', async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const userAgent = req.headers['user-agent'];
-  const event = req.body.event || 'unknown';
   const timestamp = new Date().toISOString();
+  const event = req.body.event || 'unknown';
 
-  let locationData = {};
-  try {
-    const geo = await fetch(`http://ip-api.com/json/${ip}`);
-    locationData = await geo.json();
-  } catch (err) {
-    locationData = { status: 'fail', message: 'geo lookup failed' };
+  const row = `"${timestamp}","${ip}","${userAgent}","${event}"\n`;
+  fs.appendFileSync(logFilePath, row);
+
+  console.log(`Logged: ${row.trim()}`);
+  res.status(200).json({ success: true });
+});
+
+// Serve il file CSV
+app.get('/log', (req, res) => {
+  if (fs.existsSync(logFilePath)) {
+    res.download(logFilePath);
+  } else {
+    res.status(404).send('Log non trovato');
   }
-
-  const logEntry = `"${timestamp}","${ip}","${userAgent}","${locationData.country || ''}","${locationData.city || ''}","${event}"\n`;
-  fs.appendFile('iplog.csv', logEntry, (err) => {
-    if (err) {
-      console.error('Errore nel salvataggio:', err);
-      return res.status(500).send('Errore nel salvataggio');
-    }
-    res.send('Dati salvati');
-  });
 });
 
 app.listen(port, () => {
-  console.log(`Server online sulla porta ${port}`);
+  console.log(`Server attivo su http://localhost:${port}`);
 });
