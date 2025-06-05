@@ -17,6 +17,8 @@
       body: JSON.stringify({ event: "page-load" })
     });
 
+
+
     document.getElementById("logBtn").addEventListener("click", () => {
       fetch("https://ip-xje4.onrender.com/log", {
         method: "POST",
