@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IP Logger</title>
 </head>
 <body>
-  <h1>IP Logger</h1>
-  <button id="logBtn">Logga accesso</button>
+  <h1>Logger</h1>
+  <button id="logBtn">Log IP</button>
+  <p id="result"></p>
 
   <script>
     document.getElementById('logBtn').addEventListener('click', async () => {
       try {
-        const response = await fetch('https://ip-xje4.onrender.com/log', {
-          method: 'POST'
+        const res = await fetch('https://ip-xje4.onrender.com/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
         });
-        const result = await response.text();
-        alert(result);
+        const data = await res.json();
+        document.getElementById('result').textContent = `Log registrato: IP ${data.ip}, OS: ${data.os}, Location: ${data.location}`;
       } catch (err) {
-        alert('Errore nel log');
+        document.getElementById('result').textContent = 'Errore nel log';
       }
     });
   </script>

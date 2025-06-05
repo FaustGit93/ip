@@ -1,53 +1,48 @@
 import express from 'express';
-import fetch from 'node-fetch';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import cors from 'cors';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs from 'fs';
+import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const logPath = path.join(__dirname, 'log.csv');
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-app.post('/log', async (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const userAgent = req.headers['user-agent'];
+const CSV_PATH = './log.csv';
 
-  let location = {};
+if (!fs.existsSync(CSV_PATH)) {
+  fs.writeFileSync(CSV_PATH, `"IP","OS","Location"\n`);
+}
+
+app.post('/log', async (req, res) => {
+  const ipRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const ip = ipRaw.split(',')[0].trim();
+
+  const userAgent = req.get('User-Agent') || '';
+  const osMatch = userAgent.match(/\(([^)]+)\)/);
+  const os = osMatch ? osMatch[1] : 'Unknown';
+
+  let location = '';
   try {
-    const response = await fetch(`http://ip-api.com/json/${ip}`);
-    location = await response.json();
-  } catch (err) {
-    location = { status: 'fail', message: 'Could not fetch location' };
+    const geoRes = await fetch(`https://ipapi.co/${ip}/country_name/`);
+    location = await geoRes.text();
+    if (location.length > 100 || location.includes('<')) location = '';
+  } catch {
+    location = '';
   }
 
-  const now = new Date().toISOString();
-  const data = `"${now}","${ip}","${userAgent}","${location.city || ''}","${location.country || ''}"\n`;
+  const csvLine = `"${ip}","${os}","${location}"\n`;
+  fs.appendFileSync(CSV_PATH, csvLine);
 
-  fs.appendFile(logPath, data, (err) => {
-    if (err) {
-      console.error('Errore nel salvataggio del log:', err);
-      return res.status(500).send('Errore nel salvataggio');
-    }
-    res.send('Log salvato');
-  });
+  res.json({ success: true, ip, os, location });
 });
 
 app.get('/log', (req, res) => {
-  if (fs.existsSync(logPath)) {
-    res.sendFile(logPath);
-  } else {
-    res.status(404).send('Nessun log trovato');
-  }
+  res.type('text/csv');
+  res.send(fs.readFileSync(CSV_PATH, 'utf-8'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Server avviato sulla porta ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
