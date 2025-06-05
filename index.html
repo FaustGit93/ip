@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IP Logger</title>
 </head>
 <body>
-  <h1>IP Logger Demo</h1>
-  <button id="logBtn">Invia evento</button>
+  <h1>IP Logger Test</h1>
+  <button id="logBtn">Invia Evento</button>
 
   <script>
-    fetch("https://ip-xje4.onrender.com/log", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ event: "page-load" })
-    });
+    const backendUrl = "https://ip-xje4.onrender.com"; // Sostituisci con il tuo URL di Render
 
+    async function logEvent(eventType) {
+      try {
+        const response = await fetch(`${backendUrl}/log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: eventType })
+        });
+        const result = await response.text();
+        console.log("Success:", result);
+      } catch (error) {
+        console.error("Errore nel log:", error);
+      }
+    }
 
-
-    document.getElementById("logBtn").addEventListener("click", () => {
-      fetch("https://ip-xje4.onrender.com/log", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ event: "button-click" })
-      });
-    });
+    window.addEventListener("load", () => logEvent("page-load"));
+    document.getElementById("logBtn").addEventListener("click", () => logEvent("button-click"));
   </script>
 </body>
 </html>
