@@ -5,6 +5,8 @@ import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const fetch = require('node-fetch');
+
 
 app.use(express.json());
 
