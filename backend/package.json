@@ -1,15 +1,16 @@
 {
   "name": "ip-logger-backend",
   "version": "1.0.0",
-  "description": "Backend per logging IP con Express",
+  "description": "IP Logger Backend",
   "main": "server.js",
+  "type": "commonjs",
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-  "express": "^4.18.2"
-}
+    "express": "^4.18.2"
+  }
 }
