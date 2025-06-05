@@ -1,44 +1,34 @@
-import express from 'express';
-import fs from 'fs';
-import fetch from 'node-fetch';
-import path from 'path';
-
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
-const response = await fetch(url);
-
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.post('/log', async (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
-  const userAgent = req.headers['user-agent'] || '';
-  const timestamp = new Date().toISOString();
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.headers['user-agent'];
 
-  let locationStr = 'N/A';
-  try {
-    const response = await fetch(`http://ip-api.com/json/${ip}`);
-    const data = await response.json();
-    if (data.status === 'success') {
-      locationStr = `${data.city}, ${data.country}`;
-    }
-  } catch (e) {
-    locationStr = 'Geo lookup error';
-  }
+  const locationRes = await fetch(`http://ip-api.com/json/${ip}`);
+  const location = await locationRes.json();
 
-  const safeUserAgent = userAgent.replace(/"/g, "'");
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    ip,
+    userAgent,
+    city: location.city || '',
+    country: location.country || '',
+    event: req.body.event || 'unknown'
+  };
 
-  const logLine = `"${timestamp}","${ip}","${locationStr}","${safeUserAgent}","button-click"\n`;
+  const logLine = `${logEntry.timestamp},"${logEntry.ip}","${logEntry.userAgent}","${logEntry.city}","${logEntry.country}",${logEntry.event}\n`;
+  fs.appendFileSync('log.csv', logLine);
 
-  fs.appendFile('log.csv', logLine, (err) => {
-    if (err) {
-      console.error('Errore scrittura CSV:', err);
-      return res.status(500).json({ error: 'Log failed' });
-    }
-    res.json({ success: true });
-  });
+  res.status(200).json({ success: true });
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server attivo su http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
